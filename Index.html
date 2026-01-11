@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple 15-Puzzle Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+
+        h1 { color: #333; }
+
+        /* The Game Board */
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 80px); /* 4 columns */
+            grid-template-rows: repeat(4, 80px);    /* 4 rows */
+            gap: 5px;
+            background-color: #333;
+            padding: 5px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Individual Tiles */
+        .tile {
+            width: 80px;
+            height: 80px;
+            background-color: #4CAF50;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+
+        .tile:hover { background-color: #45a049; }
+
+        /* The Empty Slot (Invisible) */
+        .empty {
+            background-color: transparent;
+            cursor: default;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            height: 30px;
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        button:hover { background-color: #007bb5; }
+    </style>
+</head>
+<body>
+
+    <h1>15-Puzzle Game</h1>
+    <div id="game-board"></div>
+    <div id="status"></div>
+    <button onclick="shuffleBoard()">New Game / Shuffle</button>
+
+    <script>
+        // Game State
+        const size = 4; // 4x4 Grid
+        let tiles = []; // Will hold numbers 1-15 and null for empty
+
+        const boardElement = document.getElementById('game-board');
+        const statusElement = document.getElementById('status');
+
+        // Initialize the game
+        function initGame() {
+            // Create solved state: [1, 2, 3, ... 15, null]
+            tiles = Array.from({length: size * size - 1}, (_, i) => i + 1);
+            tiles.push(null); // The empty spot
+            renderBoard();
+        }
+
+        // Render the grid based on the 'tiles' array
+        function renderBoard() {
+            boardElement.innerHTML = ''; // Clear current board
+            
+            tiles.forEach((tile, index) => {
+                const div = document.createElement('div');
+                div.classList.add('tile');
+                
+                if (tile === null) {
+                    div.classList.add('empty');
+                } else {
+                    div.textContent = tile;
+                    div.addEventListener('click', () => moveTile(index));
+                }
+                
+                boardElement.appendChild(div);
+            });
+            
+            checkWin();
+        }
+
+        // Handle tile movement
+        function moveTile(index) {
+            const emptyIndex = tiles.indexOf(null);
+            
+            // Calculate row and col for clicked tile and empty slot
+            const tileRow = Math.floor(index / size);
+            const tileCol = index % size;
+            const emptyRow = Math.floor(emptyIndex / size);
+            const emptyCol = emptyIndex % size;
+
+            // Check if adjacent (up, down, left, right)
+            const isAdjacent = (Math.abs(tileRow - emptyRow) + Math.abs(tileCol - emptyCol)) === 1;
+
+            if (isAdjacent) {
+                // Swap variables
+                [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
+                renderBoard();
+            }
+        }
+
+        // Shuffle Logic
+        // We shuffle by making valid random moves to ensure the puzzle is solvable
+        function shuffleBoard() {
+            statusElement.textContent = '';
+            // Make 100 random valid moves
+            for (let i = 0; i < 200; i++) {
+                const emptyIndex = tiles.indexOf(null);
+                const possibleMoves = [];
+                
+                const row = Math.floor(emptyIndex / size);
+                const col = emptyIndex % size;
+
+                // Check neighbors (Up, Down, Left, Right)
+                if (row > 0) possibleMoves.push(emptyIndex - size); // Up
+                if (row < size - 1) possibleMoves.push(emptyIndex + size); // Down
+                if (col > 0) possibleMoves.push(emptyIndex - 1); // Left
+                if (col < size - 1) possibleMoves.push(emptyIndex + 1); // Right
+
+                // Pick a random neighbor and swap
+                const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+                [tiles[emptyIndex], tiles[randomMove]] = [tiles[randomMove], tiles[emptyIndex]];
+            }
+            renderBoard();
+        }
+
+        // Check if the player has won
+        function checkWin() {
+            // A win means the array is exactly [1, 2, 3 ... 15, null]
+            for (let i = 0; i < tiles.length - 1; i++) {
+                if (tiles[i] !== i + 1) return;
+            }
+            statusElement.textContent = "🎉 You Won! 🎉";
+        }
+
+        // Start
+        initGame();
+        shuffleBoard(); // Shuffle immediately on load
+    </script>
+</body>
+</html>
